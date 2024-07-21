@@ -23,7 +23,7 @@ The CTOC contract inherits from the following contracts:
   - Vesting-based locking: Tokens can be locked with a vesting schedule.
 4. **Role-Based Access Control**:
   - Owner: Has overall control of the contract.
-  - Vesting Admin: Can manage vesting and time locks.
+  - Vesting Admin: Can manage vesting.
   - Locker: Can vesting locks.
   - Burner: Can burn tokens.
 
