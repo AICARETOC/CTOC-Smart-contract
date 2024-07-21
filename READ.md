@@ -38,8 +38,6 @@ The initial supply of CTOC tokens is set to 5,000,000,000 tokens (considering 18
 
 - `pause()`: Pause all token transfers.
 - `unpause()`: Unpause token transfers.
-- `addBurner(address account)`: Add a new burner.
-- `removeBurner(address account)`: Remove a burner.
 - `addLocker(address account)`: Add a new locker.
 - `removeLocker(address account)`: Remove a locker.
 - `recoverERC20(address tokenAddress, uint256 tokenAmount)`: Recover any ERC20 tokens sent to the contract.
