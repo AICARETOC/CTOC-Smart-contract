@@ -666,7 +666,6 @@ contract Lockable is Context {
 
     event LockerAdded(address indexed account);
     event LockerRemoved(address indexed account);
-    event TimeUnlocked(address indexed account);
     event VestingLocked(address indexed account);
     event VestingUnlocked(address indexed account);
 
