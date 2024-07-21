@@ -55,7 +55,6 @@ The initial supply of CTOC tokens is set to 5,000,000,000 tokens (considering 18
 
 ### Locker Functions
 
-- `addTimeLock(address account, uint256 amount, uint256 expiresAt)`: Add a time lock for an account.
 - `addVestingLock(address account, uint256 startsAt, uint256 period, uint256 count)`: Add a vesting lock for an account.
 
 ### Burner Functions
