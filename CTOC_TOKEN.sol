@@ -648,59 +648,12 @@ abstract contract Supervisable is Context {
 }
 
 /**
- * @dev Extension of {ERC20} that allows token holders to destroy both their own
- * tokens and those that they have an allowance for, in a way that can be
- * recognized off-chain (via event analysis).
- */
-abstract contract Burnable is Context {
-    mapping(address => bool) private _burners;
-
-    event BurnerAdded(address indexed account);
-    event BurnerRemoved(address indexed account);
-
-    /**
-     * @dev Returns whether the address is burner.
-     */
-    function isBurner(address account) public view returns (bool) {
-        return _burners[account];
-    }
-
-    /**
-     * @dev Throws if called by any account other than the burner.
-     */
-    modifier onlyBurner() {
-        require(_burners[_msgSender()], "Burnable: caller is not the burner");
-        _;
-    }
-
-    /**
-     * @dev Add burner, only owner can add burner.
-     */
-    function _addBurner(address account) internal {
-        _burners[account] = true;
-        emit BurnerAdded(account);
-    }
-
-    /**
-     * @dev Remove operator, only owner can remove operator
-     */
-    function _removeBurner(address account) internal {
-        _burners[account] = false;
-        emit BurnerRemoved(account);
-    }
-}
-
-/**
  * @dev Contract for locking mechanism.
  * Locker can add locked account.
  * Vestingadmin can remove locked account.
  */
 contract Lockable is Context {
-    struct TimeLock {
-        uint256 amount;
-        uint256 expiresAt;
-    }
-
+    
     struct VestingLock {
         uint256 amount;
         uint256 startsAt;
@@ -709,12 +662,10 @@ contract Lockable is Context {
     }
 
     mapping(address => bool) private _lockers;
-    mapping(address => TimeLock[]) private _timeLocks;
     mapping(address => VestingLock) private _vestingLocks;
 
     event LockerAdded(address indexed account);
     event LockerRemoved(address indexed account);
-    event TimeLocked(address indexed account);
     event TimeUnlocked(address indexed account);
     event VestingLocked(address indexed account);
     event VestingUnlocked(address indexed account);
@@ -748,74 +699,6 @@ contract Lockable is Context {
     function _removeLocker(address account) internal {
         _lockers[account] = false;
         emit LockerRemoved(account);
-    }
-
-    /**
-     * @dev Add time lock, only locker can add
-     */
-    function _addTimeLock(
-        address account,
-        uint256 amount,
-        uint256 expiresAt
-    ) internal {
-        require(amount > 0, "Time Lock: lock amount is 0");
-        require(expiresAt > block.timestamp, "Time Lock: invalid expire date");
-        _timeLocks[account].push(TimeLock(amount, expiresAt));
-        emit TimeLocked(account);
-    }
-
-    /**
-     * @dev Remove time lock, only vestingadmin can remove
-     * @param account The address want to remove time lock
-     * @param index Time lock index
-     */
-    function _removeTimeLock(address account, uint8 index) internal {
-        require(_timeLocks[account].length > index && index >= 0, "Time Lock: invalid index");
-
-        uint256 len = _timeLocks[account].length;
-        if (len - 1 != index) {
-            // if it is not last item, swap it
-            _timeLocks[account][index] = _timeLocks[account][len - 1];
-        }
-        _timeLocks[account].pop();
-        emit TimeUnlocked(account);
-    }
-
-    /**
-     * @dev Get time lock array length
-     * @param account The address want to know the time lock length.
-     * @return time lock length
-     */
-    function getTimeLockLength(address account) public view returns (uint256) {
-        return _timeLocks[account].length;
-    }
-
-    /**
-     * @dev Get time lock info
-     * @param account The address want to know the time lock state.
-     * @param index Time lock index
-     * @return time lock info
-     */
-    function getTimeLock(address account, uint8 index) public view returns (uint256, uint256) {
-        require(_timeLocks[account].length > index && index >= 0, "Time Lock: invalid index");
-        return (_timeLocks[account][index].amount, _timeLocks[account][index].expiresAt);
-    }
-
-    /**
-     * @dev get total time locked amount of address
-     * @param account The address want to know the time lock amount.
-     * @return time locked amount
-     */
-    function getTimeLockedAmount(address account) public view returns (uint256) {
-        uint256 timeLockedAmount = 0;
-
-        uint256 len = _timeLocks[account].length;
-        for (uint256 i = 0; i < len; i++) {
-            if (block.timestamp < _timeLocks[account][i].expiresAt) {
-                timeLockedAmount = timeLockedAmount + _timeLocks[account][i].amount;
-            }
-        }
-        return timeLockedAmount;
     }
 
     /**
@@ -899,14 +782,14 @@ contract Lockable is Context {
      * @return all locked amount
      */
     function getAllLockedAmount(address account) public view returns (uint256) {
-        return getTimeLockedAmount(account) + getVestingLockedAmount(account);
+        return getVestingLockedAmount(account);
     }
 }
 
 /**
  * @dev Contract for CTOC Token
  */
-contract CTOC is Pausable, Ownable, Supervisable, Burnable, Lockable, ERC20 {
+contract CTOC is Pausable, Ownable, Supervisable, Lockable, ERC20 {
     uint256 private constant _initialSupply = 5_000_000_000e18;
 
     constructor() ERC20("CTOC", "CTOC") {
@@ -986,23 +869,9 @@ contract CTOC is Pausable, Ownable, Supervisable, Burnable, Lockable, ERC20 {
     }
 
     /**
-     * @dev only owner can add burner
-     */
-    function addBurner(address account) public onlyOwner whenNotPaused {
-        _addBurner(account);
-    }
-
-    /**
-     * @dev only owner can remove burner
-     */
-    function removeBurner(address account) public onlyOwner whenNotPaused {
-        _removeBurner(account);
-    }
-
-    /**
      * @dev burn burner's coin
      */
-    function burn(uint256 amount) public onlyBurner whenNotPaused {
+    function burn(uint256 amount) public whenNotPaused {
         _burn(_msgSender(), amount);
     }
 
@@ -1018,24 +887,6 @@ contract CTOC is Pausable, Ownable, Supervisable, Burnable, Lockable, ERC20 {
      */
     function removeLocker(address account) public onlyOwner whenNotPaused {
         _removeLocker(account);
-    }
-
-    /**
-     * @dev only locker can add time lock
-     */
-    function addTimeLock(
-        address account,
-        uint256 amount,
-        uint256 expiresAt
-    ) public onlyLocker whenNotPaused {
-        _addTimeLock(account, amount, expiresAt);
-    }
-
-    /**
-     * @dev only vestingadmin can remove time lock
-     */
-    function removeTimeLock(address account, uint8 index) public onlyVestingadmin whenNotPaused {
-        _removeTimeLock(account, index);
     }
 
     /**
